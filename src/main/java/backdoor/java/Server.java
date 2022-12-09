@@ -10,11 +10,11 @@ import java.io.InputStreamReader;
 
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.InetAddress;
+import java.net.URL;
+import java.net.HttpURLConnection;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
 
 public class Server {
     
@@ -22,23 +22,25 @@ public class Server {
 
         final int PORT = Integer.parseInt(args[0]);
 
-        byte[] b = InetAddress.getByName("localhost").getAddress();
-
+        URL url_name = new URL("http://checkip.amazonaws.com");
+        HttpURLConnection conection = (HttpURLConnection) url_name.openConnection();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conection.getInputStream()));
+        
         ServerSocket server = new ServerSocket(PORT);
-        System.out.println("\nServidor conectado | " + b[0] + "." + b[1] + "." + b[2]+ "." + b[3] + ": " + PORT);
-        
-        ObjectOutputStream exit;
-        
+        System.out.println("\nServidor iniciado: " + bufferedReader.readLine() + ": " + PORT);
+        bufferedReader.close();
+
         while(true){
             
             try{
-              
+        
                 Socket client = server.accept();
-                System.out.println("Client conectado: " + client.getInetAddress().getHostAddress());
-                new ClientThread(client).start();
+                System.out.println("Client conectado: " + client.getInetAddress().getHostAddress() + "\n");
+            
+                ObjectOutputStream exit = new ObjectOutputStream(client.getOutputStream());
+                new ClientThread(client, exit).start();
 
-                exit = new ObjectOutputStream(client.getOutputStream());
-                exit.writeObject("Hello from Server!");
+                exit.writeObject("\nHello from Server!\n");
                 
             } catch (Exception exception){ exception.printStackTrace(); break; }
         }
@@ -52,36 +54,50 @@ public class Server {
 class ClientThread extends Thread {
 
     private Socket client;
+    private ObjectOutputStream exit;
 
-    public ClientThread(Socket client){
+    public ClientThread(Socket client, ObjectOutputStream exit){
         this.client = client;
+        this.exit = exit;
     }
-
     
     public void run() {
 
         try {
             
             ObjectInputStream entrada = new ObjectInputStream(client.getInputStream());
-            // ObjectOutputStream exit = new ObjectOutputStream(client.getOutputStream());
-            
+
             while(client.isConnected()){
                 
-                String msg = (String) entrada.readObject();
-                System.out.println(msg);
+                String msg = (String)entrada.readObject();
+                System.out.println("Client: " + msg + "\n");
                 
-                new Eval().executeCommand(msg);
+                String log = new Eval().executeCommand(msg);
+                
+                try {
+                    this.exit.writeObject("\n" + log);    
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                if("exit".equals(msg)) { entrada.close(); break; }
+                if("exit".equals(msg)) {
+
+                    System.out.println("Cliente desconectado!\n");
+                    
+                    entrada.close();
+                    exit.flush();
+                    client.close();
+                    
+                    break;
+                }
 
             }
         }
-        catch(Exception exception) { exception.printStackTrace(); } 
+        catch(Exception exception) { exception.printStackTrace(); }
     
     }
     
 }
-
 
 class Eval {
 
