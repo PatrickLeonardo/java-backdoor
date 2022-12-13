@@ -15,6 +15,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.io.FileNotFoundException;
@@ -37,39 +38,43 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import java.util.Base64;
+import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-
 public class Server {
     
     public static void main(String[] args) throws IOException {
 
-        // final int PORT = Integer.parseInt(args[0]);
-         final int PORT = 1234;
-
-        URL url_name = new URL("http://checkip.amazonaws.com");
-        HttpURLConnection conection = (HttpURLConnection) url_name.openConnection();
+        /* resgatar IP publico onde o servidor está sendo iniciado */
+        URL urlName = new URL("http://checkip.amazonaws.com");
+        HttpURLConnection conection = (HttpURLConnection) urlName.openConnection();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conection.getInputStream()));
-        File publicKeyFile = new File("publicKeyFile.txt");
-        File privateKeyFile = new File("privateKeyFile.txt"); 
         
+        File publicKeyFile = new File("../../../../../keystore/publicKeyFile.bin");
+        File privateKeyFile = new File("../../../../../keystore/privateKeyFile.bin"); 
+
+        final int PORT = 1234;
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("\nServidor iniciado: " + bufferedReader.readLine() + ": " + PORT);
         bufferedReader.close();
 
-        while(true){
+        while(!server.isClosed()){
             
             try{
         
+                /* aceitar conexão do cliente e gerar um prefixo para ele */
                 Socket client = server.accept();
-                System.out.println("Client conectado: " + client.getInetAddress().getHostAddress() + "\n");
-            
+                final int PREFIX = new Random().nextInt();
+                
+
+                System.out.println("Client: " + PREFIX + " conectado | " + client.getInetAddress().getHostAddress() + "\n");
                 ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());
         
+                /* gerar nova thread para o cliente conectado */
                 Thread thread = new Thread(() -> {
 
                     try {
@@ -78,29 +83,41 @@ public class Server {
                         
                         while(client.isConnected()){
                             
+                            /* descriptografar mensagem recebida */
                             String decodedCommand = Cryptography.decryptMesage((String)inputStream.readObject(), privateKeyFile);
-                            System.out.println("Client: " + decodedCommand + "\n");
+                            System.out.println("Client " + PREFIX + ": " + decodedCommand + "\n");
                             
-                            String log = Eval.executeCommand(decodedCommand);
+                            /* interpretar comando e executar ele a partir do servidor */
+                            String log = RemoteShell.executeCommand(decodedCommand);
+
+                            /* criptografar o log do comando executado */
                             String encodedMessage = Cryptography.encryptMessage(log, publicKeyFile);
-                            
+
+                            /* gerar uma hash do log */
+                            String hashLog = Cryptography.hashMessage(log);
+                            System.out.println("\nHash: " + hashLog + "\n");
+
                             try {
-                                outputStream.writeObject(encodedMessage);    
+                                if("exit".equals(decodedCommand)) {
+            
+                                    System.out.println("Cliente: " + PREFIX + " desconectado!\n");
+                                    
+                                    inputStream.close();
+                                    outputStream.flush();
+                                    outputStream.close();
+                                    client.close();
+                                    
+                                    break;
+                                }
+                                
+                                /* enviar o log criptografado e seu hash */
+                                outputStream.writeObject(encodedMessage);
+                                outputStream.writeObject(hashLog);
+                            
                             } catch (Exception exception) {
                                 exception.printStackTrace();
                             }
-            
-                            if("exit".equals(decodedCommand)) {
-            
-                                System.out.println("Cliente desconectado!\n");
-                                
-                                inputStream.close();
-                                outputStream.flush();
-                                client.close();
-                                
-                                break;
-                            }
-            
+                        
                         }
                     }
                     catch(Exception exception) { exception.printStackTrace(); }                    
@@ -108,7 +125,7 @@ public class Server {
                 }, "client");
                 thread.start();
 
-
+                /* enviar mensagem ao cliente quando ele se conectar ao servidor com sucesso */
                 outputStream.writeObject(Cryptography.encryptMessage("\nHello from Server!\n", publicKeyFile));
                 
             } catch (Exception exception){ exception.printStackTrace(); break; }
@@ -120,12 +137,14 @@ public class Server {
 
 }
 
-class Eval {
+class RemoteShell {
 
-    private static final Logger log = Logger.getLogger(Eval.class.getName());
+    /* gerar logger */
+    private static final Logger log = Logger.getLogger(RemoteShell.class.getName());
 
     public static String executeCommand(final String command) throws IOException {
 
+        /* montar o comando a partir de umas ArrayList */
         final ArrayList<String> commands = new ArrayList<String>();
         commands.add("/bin/bash");
         commands.add("-c");
@@ -136,6 +155,7 @@ class Eval {
 
         try {
         
+            /* gerar processo de montagem e inicia-lo */
             final ProcessBuilder processBuilder = new ProcessBuilder(commands);
             final Process process = processBuilder.start();
             final InputStream inputStream = process.getInputStream();
@@ -146,23 +166,28 @@ class Eval {
             String line;
             while((line = bufferedReader.readLine()) != null) { logBuffer += line + "\n"; }
             System.out.println(logBuffer);
-            return logBuffer;
         
         } catch (IOException ioException){
-        
-            log.severe("Erro ao executar o comando shell: " + ioException.getMessage());
-            throw ioException;
-        
+            
+            /* log de rastreio para vericidade do shell */
+            if(log.isLoggable(Level.FINEST)){
+                log.finest("Erro ao executar o comando shell: " + ioException.getMessage()); 
+            }
+            ioException.printStackTrace();   
+            
         } finally { secureClose(bufferedReader); }
+        
+        return logBuffer;
+    
     }
 
-    private static void secureClose(final Closeable resource){
+    private static void secureClose(final Closeable source){
         try{
-            if(resource != null){
-                resource.close();
+            if(source != null){
+                source.close();
             }
         } catch (IOException ioException){
-            log.severe("Erro: " + ioException.getMessage());
+            ioException.printStackTrace();
         }
     }
 
@@ -173,35 +198,48 @@ class Cryptography {
     public static void createRSAKeys(File publicKeyFile, File privateKeyFile)
     throws NoSuchAlgorithmException, FileNotFoundException, IOException {
 
+        /* instanciar o algoritimo de chave */
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
         KeyPair pair = generator.genKeyPair();
-        
+
+        /* escrever chave publica */
         try(FileOutputStream fileOutputStream = new FileOutputStream(publicKeyFile)){
             fileOutputStream.write(pair.getPublic().getEncoded());
         }
         
+        /* escrever chave privada */
         try(FileOutputStream fileOutputStream = new FileOutputStream(privateKeyFile)){
             fileOutputStream.write(pair.getPrivate().getEncoded());
         }
 
     }
 
-    public static PublicKey readRSAPublicKey(File KeyFile) 
+    public static PublicKey readRSAPublicKey(File publicKeyFile) 
     throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 
-        byte[] publicKeyBytes = Files.readAllBytes(KeyFile.toPath());
+        /* ler os bytes da chave publica */
+        byte[] publicKeyBytes = Files.readAllBytes(publicKeyFile.toPath());
+
+        /* reconhecer o algoritimo RSA */
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+        /* analisar a chave no padrão de codificação X509 */
         EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
         return keyFactory.generatePublic(publicKeySpec);
 
     }
 
-    public static PrivateKey readRSAPrivateKey(File KeyFile)
+    public static PrivateKey readRSAPrivateKey(File privateKeyFile)
     throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
 
-        byte[] privateKeyBytes = Files.readAllBytes(KeyFile.toPath());
+        /* ler os bytes da chave privada */
+        byte[] privateKeyBytes = Files.readAllBytes(privateKeyFile.toPath());
+
+        /* reconhecer o algoritimo RSA */
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+        /* analisar a chave no padrão de codificação PKCS8 */
         EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
         return keyFactory.generatePrivate(privateKeySpec);
 
@@ -210,10 +248,17 @@ class Cryptography {
     public static String encryptMessage(String message, File publicKeyFile) 
     throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, IOException, IllegalBlockSizeException, BadPaddingException {
 
+        /* encriptar a mensagem passada a partir do algoritimo RSA */
         Cipher encryptCipher = Cipher.getInstance("RSA");
+
+        /* analizar a chave publica */
         encryptCipher.init(Cipher.ENCRYPT_MODE, readRSAPublicKey(publicKeyFile));
+        
+        /* gerar os bytes da mensagemm com o padrão UTF-8 para não zuar a acentuação */
         byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         byte[] encryptMessageBytes = encryptCipher.doFinal(messageBytes);
+
+        /* retornar a encriptografia da mensagem */
         return Base64.getEncoder().encodeToString(encryptMessageBytes);
 
     }
@@ -222,8 +267,13 @@ class Cryptography {
     public static String decryptMesage(String encryptMessage, File privateKeyFile)
     throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, IOException, IllegalBlockSizeException, BadPaddingException {
 
+        /* espicificar o algoritimo para descriptografia */
         Cipher decryptCipher = Cipher.getInstance("RSA");
+
+        /* ler a chave privada */
         decryptCipher.init(Cipher.DECRYPT_MODE, readRSAPrivateKey(privateKeyFile));
+
+        /* realizar o decode da mensagem em bytes */
         byte[] decryptMessageBytes = decryptCipher.doFinal(Base64.getDecoder().decode(encryptMessage));
         return new String(decryptMessageBytes, StandardCharsets.UTF_8);
 
@@ -231,22 +281,29 @@ class Cryptography {
 
     public static String hashMessage(String message) throws NoSuchAlgorithmException{
         
+        /* instanciar algoritimo de hash SHA3-256 */
         final MessageDigest digest = MessageDigest.getInstance("SHA3-256");
+
+        /* gerar a hash de acordo com o padrão UTF-8 para não haver perdas durante o processo */
         final byte[] hashBytes = digest.digest(message.getBytes(StandardCharsets.UTF_8));
+        
+        /* retornar a hash em hexadecimal */
         return bytesToHex(hashBytes);
     
     }
 
     private static String bytesToHex(byte[] hash){
 
+        /* instanciar montagem da string hexadecimal a partir do array de bytes */
         StringBuilder hexString = new StringBuilder(2 * hash.length);
+
+        /* montar a string hexadecimal em cima de cada byte da hash */
         for (byte b : hash){
             String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1){
-                hexString.append('0');
-            }
+            if (hex.length() == 1) { hexString.append('0'); }
             hexString.append(hex);
         }
+
         return hexString.toString();
 
     }
