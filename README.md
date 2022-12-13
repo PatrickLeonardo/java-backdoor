@@ -3,7 +3,7 @@
 ### Backdoor feito a partir da linguagem java
 <hr>
 
-#### Funciona a base de um arquivo de para o [Servidor](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Server.java) que será rodado na local de ataque e um arquivo para o [Cliente](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Client.java), que será a base da conexão com o backdoor
+#### Funciona a base de um arquivo para o [Servidor](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Server.java) que será rodado na local de ataque e um arquivo para o [Cliente](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Client.java), que será a base da conexão com o backdoor
 
 #### É composto por um envio de mensagens criptografadas com o algoritimo RSA, e veracidade de hash com o algoritimo SHA3-256
 #### Funciona de forma Multi-Threading, permitindo várias conexões simultaneamente
@@ -15,7 +15,7 @@
 
 ### 💻 Como usar
 
-- Primeiro é necessário clonar este repositorio: <br>
+- Primeiro é necessário clonar este repositrio: <br>
 ``` git clone https://github.com/PatrickLeonardo/java-backdoor ```
 
 - Após isso basta navegar até a pasta principal: <br>
