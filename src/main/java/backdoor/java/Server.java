@@ -54,8 +54,8 @@ public class Server {
         HttpURLConnection conection = (HttpURLConnection) urlName.openConnection();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conection.getInputStream()));
         
-        File publicKeyFile = new File("../../../../../keystore/publicKeyFile.bin");
-        File privateKeyFile = new File("../../../../../keystore/privateKeyFile.bin"); 
+        File publicKeyFile = new File("keystore/publicKeyFile.bin");
+        File privateKeyFile = new File("keystore/privateKeyFile.bin"); 
 
         final int PORT = 1234;
         ServerSocket server = new ServerSocket(PORT);

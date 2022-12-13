@@ -48,8 +48,8 @@ public class Client {
 
             ObjectInputStream inputStream = new ObjectInputStream(client.getInputStream());
             ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());  
-            File privateKeyFile = new File("../../../../../keystore/privateKeyFile.bin");        
-            File publicKeyFile = new File("../../../../../keystore/publicKeyFile.bin");
+            File privateKeyFile = new File("keystore/privateKeyFile.bin");        
+            File publicKeyFile = new File("keystore/publicKeyFile.bin");
 
             while(client.isConnected()){
 
