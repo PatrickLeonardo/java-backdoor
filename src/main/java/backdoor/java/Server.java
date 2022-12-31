@@ -15,6 +15,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,7 +60,8 @@ public class Server {
 
         final int PORT = 1234;
         ServerSocket server = new ServerSocket(PORT);
-        System.out.println("\nServidor iniciado: " + bufferedReader.readLine() + ": " + PORT);
+        
+        System.out.println(RemoteShell.executeCommand("clear") + "Servidor iniciado: " + bufferedReader.readLine() + ": " + PORT);
         bufferedReader.close();
 
         while(!server.isClosed()){
@@ -83,24 +85,30 @@ public class Server {
                         
                         while(client.isConnected()){
                             
+                            char character = '-';
+                            char[] arrayCharacter = new char[100];
+                            Arrays.fill(arrayCharacter, character);
+                            String spaces = new String(arrayCharacter);
+                            
                             /* descriptografar mensagem recebida */
                             String decodedCommand = Cryptography.decryptMesage((String)inputStream.readObject(), privateKeyFile);
-                            System.out.println("Client " + PREFIX + ": " + decodedCommand + "\n");
+                            System.out.println(spaces + "\n\nClient " + PREFIX + ": " + decodedCommand + "\n");
                             
                             /* interpretar comando e executar ele a partir do servidor */
                             String log = RemoteShell.executeCommand(decodedCommand);
-
+                            System.out.println(log);
+                            
                             /* criptografar o log do comando executado */
                             String encodedMessage = Cryptography.encryptMessage(log, publicKeyFile);
 
                             /* gerar uma hash do log */
                             String hashLog = Cryptography.hashMessage(log);
-                            System.out.println("\nHash: " + hashLog + "\n");
+                            System.out.println("Hash: " + hashLog + "\n\n" + spaces);
 
                             try {
                                 if("exit".equals(decodedCommand)) {
             
-                                    System.out.println("Cliente: " + PREFIX + " desconectado!\n");
+                                    System.out.println("\nCliente: " + PREFIX + " desconectado!\n");
                                     
                                     inputStream.close();
                                     outputStream.flush();
@@ -126,7 +134,11 @@ public class Server {
                 thread.start();
 
                 /* enviar mensagem ao cliente quando ele se conectar ao servidor com sucesso */
-                outputStream.writeObject(Cryptography.encryptMessage("\nHello from Server!\n", publicKeyFile));
+                String OperatingnSystem = "Linux";
+                if(!RemoteShell.executeCommand("ls /").contains("root")){OperatingnSystem = "Windows";};
+                
+                outputStream.writeObject(Cryptography.encryptMessage(RemoteShell.executeCommand("clear") + 
+                "Hello from Server!\nServer is runing in " + OperatingnSystem + " Operating System!\n", publicKeyFile));
                 
             } catch (Exception exception){ exception.printStackTrace(); break; }
         }
@@ -165,7 +177,6 @@ class RemoteShell {
 
             String line;
             while((line = bufferedReader.readLine()) != null) { logBuffer += line + "\n"; }
-            System.out.println(logBuffer);
         
         } catch (IOException ioException){
             
