@@ -55,12 +55,20 @@ public class Client {
 
                 /* realizar o decode da log ou mensagem recebido pelo servidor */
                 String decodedMessage = Cryptography.decryptMesage((String)inputStream.readObject(), privateKeyFile);
-                System.out.println("\n" + decodedMessage);
                 count += 1;
-                if (count > 1 ){
+
+                if(decodedMessage.length() > 0) {
+                    System.out.println("\n" + decodedMessage);
+                }                
+                else {  System.out.println("\nNão foi possivel executar o comando!\n"); }    
+            
+                if (count > 1){
                     String hashMessage = (String)inputStream.readObject();
-                    System.out.println(hashMessage + "\n");
+                    System.out.println("Hash: " + "(" + hashMessage + ")" + "\n");
                 }
+
+                // if(decodedMessage.length() == 0) { System.out.println("Não foi possivel executar o comando!\n"); }
+                //System.out.println(decodedMessage.length());
                 
                 /* resgatar o input do cliente */
                 String outputMessage = System.console().readLine("$ ");
