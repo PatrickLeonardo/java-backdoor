@@ -64,7 +64,7 @@ public class Client {
             
                 if (count > 1){
                     String hashMessage = (String)inputStream.readObject();
-                    System.out.println("Hash: " + "(" + hashMessage + ")" + "\n");
+                    System.out.println("Hash: " + hashMessage + "\n");
                 }
 
                 // if(decodedMessage.length() == 0) { System.out.println("Não foi possivel executar o comando!\n"); }
