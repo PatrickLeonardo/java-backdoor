@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
 import java.net.Socket;
 
 import java.io.FileNotFoundException;
@@ -25,7 +24,6 @@ import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-
 import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
@@ -60,16 +58,13 @@ public class Client {
                 if(decodedMessage.length() > 0) {
                     System.out.println("\n" + decodedMessage);
                 }                
-                else {  System.out.println("\nNão foi possivel executar o comando!\n"); }    
+                else {  System.out.println("\nUnable to execute command!\n"); }
             
                 if (count > 1){
                     String hashMessage = (String)inputStream.readObject();
-                    System.out.println("Hash: " + "(" + hashMessage + ")" + "\n");
+                    System.out.println("Hash: " + hashMessage + "\n");
                 }
 
-                // if(decodedMessage.length() == 0) { System.out.println("Não foi possivel executar o comando!\n"); }
-                //System.out.println(decodedMessage.length());
-                
                 /* resgatar o input do cliente */
                 String outputMessage = System.console().readLine("$ ");
 
