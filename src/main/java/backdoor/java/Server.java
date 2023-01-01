@@ -86,7 +86,7 @@ public class Server {
                         while(client.isConnected()){
                             
                             char character = '-';
-                            char[] arrayCharacter = new char[100];
+                            char[] arrayCharacter = new char[80];
                             Arrays.fill(arrayCharacter, character);
                             String spaces = new String(arrayCharacter);
                             
@@ -128,7 +128,19 @@ public class Server {
                         
                         }
                     }
-                    catch(Exception exception) { exception.printStackTrace(); }                    
+                    catch(IllegalBlockSizeException illegalBlockSizeException) {
+
+                        System.out.println(illegalBlockSizeException);
+                        try {
+                            String returnMessage = "Data must not be longer than 245 bytes";
+                            String encodedMessage = Cryptography.encryptMessage(returnMessage, publicKeyFile);
+                            outputStream.writeObject(encodedMessage);
+                            outputStream.writeObject(Cryptography.hashMessage(returnMessage));
+                        }
+                        catch (Exception exception) { exception.printStackTrace();}
+                    
+                    }
+                    catch(Exception exception) { exception.printStackTrace(); }
 
                 }, "client");
                 thread.start();
