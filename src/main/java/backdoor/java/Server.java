@@ -14,7 +14,6 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.HttpURLConnection;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +39,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import java.util.Base64;
 import java.util.Random;
+import java.util.Vector;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -49,6 +49,8 @@ import javax.crypto.NoSuchPaddingException;
 public class Server {
     
     public static void main(String[] args) throws IOException {
+
+        args[0] = args[0].toLowerCase();
 
         /* resgatar IP publico onde o servidor está sendo iniciado */
         URL urlName = new URL("http://checkip.amazonaws.com");
@@ -61,7 +63,7 @@ public class Server {
         final int PORT = 1234;
         ServerSocket server = new ServerSocket(PORT);
         
-        System.out.println(RemoteShell.executeCommand("clear") + "Servidor iniciado: " + bufferedReader.readLine() + ": " + PORT);
+        System.out.println(RemoteShell.executeCommand("clear", args[0]) + "Servidor iniciado: " + bufferedReader.readLine() + ": " + PORT);
         bufferedReader.close();
 
         while(!server.isClosed()){
@@ -95,7 +97,7 @@ public class Server {
                             System.out.println(spaces + "\n\nClient " + PREFIX + ": " + decodedCommand + "\n");
                             
                             /* interpretar comando e executar ele a partir do servidor */
-                            String log = RemoteShell.executeCommand(decodedCommand);
+                            String log = RemoteShell.executeCommand(decodedCommand, args[0]);
                             System.out.println(log);
                             
                             /* criptografar o log do comando executado */
@@ -146,10 +148,10 @@ public class Server {
                 thread.start();
 
                 /* enviar mensagem ao cliente quando ele se conectar ao servidor com sucesso */
-                String OperatingnSystem = "Linux";
-                if(!RemoteShell.executeCommand("ls /").contains("root")){OperatingnSystem = "Windows";};
-                
-                outputStream.writeObject(Cryptography.encryptMessage(RemoteShell.executeCommand("clear") + 
+                // if(!RemoteShell.executeCommand("ls /").contains("root")){OperatingnSystem = "Windows";};
+                String OperatingnSystem = (!RemoteShell.executeCommand("ls /", args[0]).contains("root")) ? "Windows" : "Linux";
+
+                outputStream.writeObject(Cryptography.encryptMessage(RemoteShell.executeCommand("clear", args[0]) + 
                 "Hello from Server!\nServer is runing in " + OperatingnSystem + " Operating System!\n", publicKeyFile));
                 
             } catch (Exception exception){ exception.printStackTrace(); break; }
@@ -166,12 +168,13 @@ class RemoteShell {
     /* gerar logger */
     private static final Logger log = Logger.getLogger(RemoteShell.class.getName());
 
-    public static String executeCommand(final String command) throws IOException {
+    public static String executeCommand(final String command, String arg) throws IOException {
 
-        /* montar o comando a partir de umas ArrayList */
-        final ArrayList<String> commands = new ArrayList<String>();
-        commands.add("/bin/bash");
-        commands.add("-c");
+        /* montar o comando a partir de um vetor */
+        final Vector<String> commands = new Vector<String>();
+
+        if(arg.contains("windows")){commands.add("powershell"); commands.add("-c");}
+        else {commands.add("./load.sh");}
         commands.add(command);
 
         BufferedReader bufferedReader = null;
