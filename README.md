@@ -6,8 +6,9 @@
 #### Funciona a base de um arquivo para o [Servidor](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Server.java) que será rodado na local de ataque e um arquivo para o [Cliente](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Client.java), que será a base da conexão com o backdoor
 
 #### É composto por um envio de mensagens criptografadas com o algoritimo RSA, e veracidade de hash com o algoritimo SHA3-256
-#### Funciona de forma Multi-Threading, permitindo várias conexões simultaneamente
+#### Funciona de forma Multi-Threading, permitindo várias conexões simultaneamente (as mensagens possuem um limite de tamanho de 245 bytes)
 #### Qualquer mensagem enviada pelo cliente para o servidor será interpretada e executada no bash do diretório do servidor e será retornado a resposta do "comando" para o cliente
+#### Possui suporte aos sistemas operacionais Windows e distribuições Linux
 
 ### 📨 Versões
 - JDK-19
@@ -22,7 +23,7 @@
 ``` cd java-backdoor/src/main/java/backdoor/java ```
 
 - Em seguida rodar o servidor com: <br>
-``` java Server.java ```
+``` java Server.java <OS>```
 
 - E rodar um cliente e um terminal diferente: <br>
 ``` java Client.java <IP-DO-SERVIDOR> 1234 ```
