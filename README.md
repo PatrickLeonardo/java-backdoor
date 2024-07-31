@@ -1,34 +1,34 @@
 ## Java Backdoor
 
-### Backdoor feito a partir da linguagem java
+### Backdoor made with java
 <hr>
 
-#### Funciona a base de um arquivo para o [Servidor](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Server.java) que será rodado na local de ataque e um arquivo para o [Cliente](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Client.java), que será a base da conexão com o backdoor
+#### It works based on a file for the [Server](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Server.java) that will be run at the attack site and a file for the [Client](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/Client.java), which will be the basis for the connection with the backdoor
 
-#### É composto por um envio de mensagens criptografadas com o algoritimo RSA, e veracidade de hash com o algoritimo SHA3-256
-#### Funciona de forma Multi-Threading, permitindo várias conexões simultaneamente (as mensagens possuem um limite de tamanho de 245 bytes)
-#### Qualquer mensagem enviada pelo cliente para o servidor será interpretada e executada no bash do diretório do servidor e será retornado a resposta do "comando" para o cliente
-#### Possui suporte aos sistemas operacionais Windows e distribuições Linux
+#### It consists of sending encrypted messages with the RSA algorithm, and hash veracity with the SHA3-256 algorithm
+#### It works in a Multi-Threading manner, allowing multiple connections simultaneously (messages have a size limit of 245 bytes)
+#### Any message sent by the client to the server will be interpreted and executed in the bash directory of the server and the response of the "command" will be returned to the client
+#### Supports Windows operating systems and Linux distributions
 
-### 📨 Versões
+### 📨 Versions
 - JDK-19
 - Maven 1.9
 
-### 💻 Como usar
+### 💻 How to use
 
-- Primeiro é necessário clonar este repositrio: <br>
+- First you need to clone this repository: <br>
 ``` git clone https://github.com/PatrickLeonardo/java-backdoor ```
 
-- Após isso basta navegar até a pasta principal: <br>
+- After that, just navigate to the main folder: <br>
 ``` cd java-backdoor/src/main/java/backdoor/java ```
 
-- Em seguida rodar o servidor com: <br>
+- Then run the server with: <br>
 ``` java Server.java <OS>```
 
-- E rodar um cliente e um terminal diferente: <br>
-``` java Client.java <IP-DO-SERVIDOR> 1234 ```
+- And run the client in a different terminal: <br>
+``` java Client.java <SERVER-IP> 1234 ```
 
-### Observações
+### Notes
 
-O backdoor também pode ser usado apenas com os arquivos do servidor e cliente, mas devem ser apenas rodados com a pasta [keystore](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/keystore) no mesmo diretorio. <br>
-Feito para ser usado em testes de penetração (pentest) e pós-exploração em servidores rodados com base em java, como J2EE, ReadHat JBoss EAP, Jetty e etc...
+The backdoor can also be used with just the server and client files, but they must only be run with the [keystore](https://github.com/PatrickLeonardo/java-backdoor/tree/main/src/main/java/backdoor/java/keystore) folder in the same directory. <br>
+Made to be used in penetration testing (pentest) and post-exploitation on servers running on Java, such as J2EE, ReadHat JBoss EAP, Jetty, and more...
